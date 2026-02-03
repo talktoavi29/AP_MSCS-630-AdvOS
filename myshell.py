@@ -3,8 +3,12 @@ import shlex
 import signal
 import subprocess
 
+from scheduler_simulation import SchedulerSim  # must match your file name
+
 job_table = {}
 job_counter = 1
+
+sched = SchedulerSim()
 
 
 def win():
@@ -227,8 +231,79 @@ def parse(line):
         return None
 
 
+def print_help():
+    print("\n=== Built-in Commands ===")
+    print("exit                       quit the shell")
+    print("cd [path]                   change directory")
+    print("pwd                         print working directory")
+    print("echo <text>                 print text")
+    print("clear                       clear the screen")
+    print("ls [path]                   list directory")
+    print("cat <file>                  print file contents")
+    print("mkdir <dir>                 create directory")
+    print("rmdir <dir>                 remove empty directory")
+    print("rm <file>                   delete file")
+    print("touch <file>                create/update file timestamp")
+    print("kill <pid>                  terminate process by pid")
+    print("jobs                        show background jobs")
+    print("fg <job_id>                 bring job to foreground")
+    print("bg <job_id>                 resume job in background")
+    print("\n=== Deliverable 2: Scheduler Simulation Commands ===")
+    print("addproc <name> <burst> <priority> [arrival]")
+    print("psim                        list simulated processes")
+    print("sched_rr <quantum> [sleep]  run round-robin scheduler")
+    print("sched_prio [sleep]          run preemptive priority scheduler")
+    print("reset_sim                   clear all simulated processes")
+    print("help                        show this help\n")
+
+
+def cmd_addproc(args):
+    if len(args) < 3:
+        err("Usage: addproc <name> <burst_ticks> <priority> [arrival_ticks]")
+        return
+    try:
+        name = args[0]
+        burst = int(args[1])
+        priority = int(args[2])
+        arrival = int(args[3]) if len(args) >= 4 else 0
+        p = sched.add_process(name=name, burst=burst, priority=priority, arrival=arrival)
+        print(f"Added: pid={p.pid} name={p.name} burst={p.burst} prio={p.priority} arrival={p.arrival}")
+    except Exception as e:
+        err(e)
+
+
+def cmd_psim():
+    procs = sched.list_processes()
+    if not procs:
+        print("(no simulated processes) use addproc first")
+        return
+    print(f"{'PID':<5}{'Name':<12}{'Burst':<8}{'Prio':<8}{'Arr':<8}")
+    for p in procs:
+        print(f"{p.pid:<5}{p.name:<12}{p.burst:<8}{p.priority:<8}{p.arrival:<8}")
+
+
+def cmd_sched_rr(args):
+    if len(args) < 1:
+        err("Usage: sched_rr <quantum_ticks> [tick_sleep_seconds]")
+        return
+    try:
+        quantum = int(args[0])
+        tick_sleep = float(args[1]) if len(args) >= 2 else 0.0
+        sched.schedule_round_robin(quantum=quantum, tick_sleep=tick_sleep)
+    except Exception as e:
+        err(e)
+
+
+def cmd_sched_prio(args):
+    try:
+        tick_sleep = float(args[0]) if len(args) >= 1 else 0.0
+        sched.schedule_priority_preemptive(tick_sleep=tick_sleep)
+    except Exception as e:
+        err(e)
+
+
 def main():
-    print("MyShell Deliverable 1. Type exit to quit.")
+    print("MyShell Deliverable 1 + Deliverable 2 Scheduler Sim. Type help for commands. Type exit to quit.")
     while True:
         try:
             refresh_jobs()
@@ -245,6 +320,8 @@ def main():
             if cmd == "exit":
                 print("bye")
                 break
+            elif cmd == "help":
+                print_help()
             elif cmd == "cd":
                 do_cd(args)
             elif cmd == "pwd":
@@ -273,6 +350,18 @@ def main():
                 fg_cmd(args)
             elif cmd == "bg":
                 bg_cmd(args)
+
+            elif cmd == "addproc":
+                cmd_addproc(args)
+            elif cmd == "psim":
+                cmd_psim()
+            elif cmd == "sched_rr":
+                cmd_sched_rr(args)
+            elif cmd == "sched_prio":
+                cmd_sched_prio(args)
+            elif cmd == "reset_sim":
+                sched.reset()
+                print("Simulated process list cleared.")
             else:
                 start_process(tokens, bg)
 
