@@ -3,13 +3,16 @@ import shlex
 import signal
 import subprocess
 
-from scheduler_simulation import SchedulerSim  # must match your file name
+from scheduler_simulation import SchedulerSim
+from memory_management import MemoryManager
+from sync_simlulation import ProducerConsumerDemo
 
 job_table = {}
 job_counter = 1
 
 sched = SchedulerSim()
-
+mem = MemoryManager()
+sync_demo = ProducerConsumerDemo()
 
 def win():
     return os.name == "nt"
@@ -255,6 +258,12 @@ def print_help():
     print("sched_prio [sleep]          run preemptive priority scheduler")
     print("reset_sim                   clear all simulated processes")
     print("help                        show this help\n")
+    print("\n=== Deliverable 3: Memory Management ===")
+    print("mem_policy <FIFO|LRU>")
+    print("mem_access <pid> <page>")
+    print("mem_status")
+    print("\n=== Deliverable 3: Synchronization ===")
+    print("run_pc        run producer-consumer demo")
 
 
 def cmd_addproc(args):
@@ -362,6 +371,19 @@ def main():
             elif cmd == "reset_sim":
                 sched.reset()
                 print("Simulated process list cleared.")
+            elif cmd == "mem_policy":
+                mem.set_policy(args[0])
+                print("Policy set to", args[0])
+            elif cmd == "mem_access":
+                pid = int(args[0])
+                page = int(args[1])
+                mem.access_page(pid, page)
+
+            elif cmd == "mem_status":
+                mem.status()
+
+            elif cmd == "run_pc":
+                sync_demo.run_demo()
             else:
                 start_process(tokens, bg)
 
